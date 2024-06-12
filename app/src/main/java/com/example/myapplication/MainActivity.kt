@@ -19,6 +19,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class MainActivity : AppCompatActivity() {
 
@@ -76,14 +80,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener {
-            if (!it.isSuccessful) {
-                Log.w("TAG", "Fetching FCM registration token failed", it.exception)
-                return@OnCompleteListener
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("MainActivity", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
             }
-            val token = it.result
-            Log.i("Token", it.result.toString())
-        })
+
+            val token = task.result
+
+            val deviceName = Build.MODEL
+
+            val json = """
+        {
+            "msisdn": "12345678901",
+            "firebaseToken": "$token",
+            "deviceName": "$deviceName"
+        }
+    """.trimIndent()
+
+            val client = OkHttpClient()
+
+            val JSON = "application/json; charset=utf-8".toMediaType()
+
+            val body = json.toRequestBody(JSON)
+
+            val request = Request.Builder()
+                .url("http://35.91.155.144:8083/api/v1/firebase/device/add")
+                .post(body)
+                .build()
+
+            Thread {
+                try {
+                    val response = client.newCall(request).execute()
+                    Log.d("MainActivity", "Response: ${response.body?.string()}")
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error: ${e.message}")
+                }
+            }.start()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

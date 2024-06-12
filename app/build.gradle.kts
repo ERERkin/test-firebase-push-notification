@@ -53,6 +53,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 }
 
 apply(plugin = "com.google.gms.google-services")
